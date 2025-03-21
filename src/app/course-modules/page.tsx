@@ -1,12 +1,8 @@
-import ContentGenerator from '@/components/ContentGenerator';
-import DarkModeToggle from '@/components/DarkModeToggle';
-import Link from 'next/link';
+import CourseModule from '@/components/CourseModule';
 
-export default function Home() {
+export default function CourseModulesPage() {
   return (
     <div className="container">
-      <DarkModeToggle />
-      
       <div className="header">
         <div className="header-logo">
           <svg width="40" height="40" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -16,19 +12,11 @@ export default function Home() {
             <path d="M8.5 14.75H12.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
         </div>
-        <h1>Educational Content Generator</h1>
-        <p>Create professional content and assessments for any educational topic using AI</p>
-        <div className="header-highlight">
-          Powered by OpenAI GPT models
-        </div>
-        <div className="header-links">
-          <Link href="/course-modules" className="header-link">
-            Build Course Modules ➔
-          </Link>
-        </div>
+        <h1>Course Module Builder</h1>
+        <p>Create and organize educational content into structured courses</p>
       </div>
       
-      <ContentGenerator />
+      <CourseModule />
       
       <footer>
         <p>© {new Date().getFullYear()} Educational Content Generator</p>
@@ -36,4 +24,4 @@ export default function Home() {
       </footer>
     </div>
   );
-}
+} 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { v4 as uuidv4 } from 'uuid';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -7,7 +8,7 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
-    const { content, questionType, difficulty, numQuestions } = await req.json();
+    const { content, questionType, difficulty, numQuestions, includeExplanations, includeTags, timeEstimates } = await req.json();
     
     if (!content || !questionType || !difficulty || !numQuestions) {
       return NextResponse.json(
@@ -54,6 +55,36 @@ export async function POST(req: Request) {
         - Items should be from the same category or topic area
         - Ensure there are no ambiguous matches`;
         break;
+      case 'trueFalse':
+        promptForQuestionType = 'Create true/false questions where the statement is either entirely true or contains a significant factual error.';
+        questionStructureGuidelines = `
+        For true/false questions:
+        - Create clear, unambiguous statements
+        - Avoid qualifiers like "always," "never," "all," "none" in false statements
+        - For false statements, make sure they contain a clear factual error
+        - Balance the number of true and false statements
+        - Statements should be concise and test one concept at a time`;
+        break;
+      case 'fillInBlank':
+        promptForQuestionType = 'Create fill-in-the-blank questions where key terms or concepts are removed and must be filled in.';
+        questionStructureGuidelines = `
+        For fill-in-the-blank questions:
+        - Remove key terms or concepts that are central to understanding
+        - Each blank should have 1-3 acceptable answers
+        - The blanks should be challenging but answerable from the content
+        - Provide clear context in the surrounding text
+        - The sentence structure should clearly indicate what type of word/phrase is missing`;
+        break;
+      case 'essay':
+        promptForQuestionType = 'Create essay prompts that require analytical thinking and synthesis of information from the content.';
+        questionStructureGuidelines = `
+        For essay questions:
+        - Create prompts that require analysis, evaluation, or synthesis
+        - Specify a reasonable word limit for the response
+        - Include guidance on what aspects to address
+        - Create a scoring rubric with 3-4 criteria and descriptions of performance levels
+        - Optionally provide a brief sample answer outline`;
+        break;
       default:
         promptForQuestionType = 'Create single-choice multiple-choice questions with 4 options each, with only one correct answer.';
         questionStructureGuidelines = `
@@ -88,6 +119,28 @@ export async function POST(req: Request) {
         - Include questions that test edge cases and exceptions`,
     };
     
+    const additionalInstructions = [];
+    
+    if (includeExplanations) {
+      additionalInstructions.push(`
+      - For each question, provide a brief explanation of why the correct answer is correct
+      - Explanations should be clear, concise, and educational
+      - For incorrect options, briefly explain why they are incorrect where appropriate`);
+    }
+    
+    if (includeTags) {
+      additionalInstructions.push(`
+      - Add 2-4 relevant tags for each question that indicate the specific concepts being tested
+      - Tags should be concise (1-3 words) and useful for categorization`);
+    }
+    
+    if (timeEstimates) {
+      additionalInstructions.push(`
+      - For each question, estimate the approximate time in seconds a student would need to answer
+      - Base this on question complexity and required cognitive processing
+      - Simple recall questions might take 30 seconds, while complex analysis might take 120 seconds or more`);
+    }
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
@@ -111,6 +164,8 @@ ${questionStructureGuidelines}
 DIFFICULTY LEVEL: ${difficulty}
 ${difficultyGuidelines[difficulty as keyof typeof difficultyGuidelines]}
 
+${additionalInstructions.join('\n')}
+
 GENERAL ASSESSMENT GUIDELINES:
 - Questions should directly test understanding of the educational content provided
 - Cover different aspects/sections of the content (don't focus on just one part)
@@ -127,9 +182,15 @@ For single choice:
 {
   "questions": [
     {
+      "id": "unique-id",
+      "type": "singleChoice",
       "question": "Complete question text here",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswer": "Option that is correct"
+      "correctAnswer": "Option that is correct",
+      "explanation": "Explanation of the correct answer (if requested)",
+      "tags": ["tag1", "tag2"] (if requested),
+      "estimatedTimeSeconds": 45 (if requested),
+      "difficulty": "${difficulty}"
     },
     ... additional questions
   ]
@@ -139,9 +200,15 @@ For multiple choice:
 {
   "questions": [
     {
+      "id": "unique-id",
+      "type": "multipleChoice",
       "question": "Complete question text here",
       "options": ["Option A", "Option B", "Option C", "Option D"],
-      "correctAnswers": ["First correct option", "Second correct option"]
+      "correctAnswers": ["First correct option", "Second correct option"],
+      "explanation": "Explanation of the correct answer (if requested)",
+      "tags": ["tag1", "tag2"] (if requested),
+      "estimatedTimeSeconds": 60 (if requested),
+      "difficulty": "${difficulty}"
     },
     ... additional questions
   ]
@@ -151,21 +218,106 @@ For matching pairs:
 {
   "questions": [
     {
+      "id": "unique-id",
+      "type": "matchingPairs",
+      "question": "Match the items in Column A with their corresponding items in Column B",
       "columnA": ["Item 1", "Item 2", "Item 3", "Item 4"],
       "columnB": ["Match 1", "Match 2", "Match 3", "Match 4"],
-      "correctPairs": [[0, 0], [1, 1], [2, 2], [3, 3]]
+      "correctPairs": [[0, 0], [1, 1], [2, 2], [3, 3]],
+      "explanation": "Explanation of the matches (if requested)",
+      "tags": ["tag1", "tag2"] (if requested),
+      "estimatedTimeSeconds": 90 (if requested),
+      "difficulty": "${difficulty}"
     }
   ]
 }
 
-The array indices in correctPairs represent the position in columnA and columnB arrays (zero-indexed).
+For true/false:
+{
+  "questions": [
+    {
+      "id": "unique-id",
+      "type": "trueFalse",
+      "question": "Question prompt",
+      "statement": "Statement to evaluate as true or false",
+      "isTrue": true or false,
+      "explanation": "Explanation of why the statement is true or false (if requested)",
+      "tags": ["tag1", "tag2"] (if requested),
+      "estimatedTimeSeconds": 30 (if requested),
+      "difficulty": "${difficulty}"
+    },
+    ... additional questions
+  ]
+}
+
+For fill in blank:
+{
+  "questions": [
+    {
+      "id": "unique-id",
+      "type": "fillInBlank",
+      "question": "Fill in the blanks in the following text",
+      "textWithBlanks": "Text with _____ for blanks",
+      "answers": [["acceptable answer 1", "alternative answer 1"], ["acceptable answer 2"]],
+      "explanation": "Explanation of the answers (if requested)",
+      "tags": ["tag1", "tag2"] (if requested),
+      "estimatedTimeSeconds": 45 (if requested),
+      "difficulty": "${difficulty}"
+    },
+    ... additional questions
+  ]
+}
+
+For essay:
+{
+  "questions": [
+    {
+      "id": "unique-id",
+      "type": "essay",
+      "question": "Essay question prompt",
+      "prompt": "Detailed prompt with guidance",
+      "wordLimit": 500,
+      "rubric": [
+        {
+          "criteria": "Understanding of Content",
+          "weight": 30,
+          "descriptions": {
+            "excellent": "Demonstrates thorough understanding...",
+            "good": "Shows good understanding...",
+            "satisfactory": "Basic understanding shown...",
+            "needsImprovement": "Limited understanding..."
+          }
+        },
+        ... additional rubric items
+      ],
+      "sampleAnswer": "Brief outline of a good response (if requested)",
+      "tags": ["tag1", "tag2"] (if requested),
+      "estimatedTimeSeconds": 1200 (if requested),
+      "difficulty": "${difficulty}"
+    },
+    ... additional questions
+  ]
+}
+
 Ensure the JSON is valid and properly formatted.`
         }
       ],
       response_format: { type: "json_object" }
     });
 
-    const questionsJSON = JSON.parse(completion.choices[0].message.content || '{"questions": []}');
+    // Parse the response into JSON
+    let questionsJSON = JSON.parse(completion.choices[0].message.content || '{"questions": []}');
+    
+    // Assign UUIDs if they weren't generated by the AI
+    if (questionsJSON.questions && Array.isArray(questionsJSON.questions)) {
+      questionsJSON.questions = questionsJSON.questions.map(q => {
+        if (!q.id) {
+          q.id = uuidv4();
+        }
+        return q;
+      });
+    }
+    
     return NextResponse.json(questionsJSON);
   } catch (error) {
     console.error('Error generating questions:', error);
