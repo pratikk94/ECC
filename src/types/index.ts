@@ -89,7 +89,7 @@ export interface HistoryItem {
   topic: string;
   subtopic: string;
   content: string;
-  questions: any | null;
+  questions: MixedQuestionList | null;
   questionSettings: QuestionSettings;
   tags: string[];
   analytics?: ContentAnalytics;
@@ -150,7 +150,8 @@ export interface ContentLibraryItem {
   dateCreated: string;
   dateModified: string;
   content: string;
-  questions: any[];
+  questions: (SingleChoiceQuestion | MultipleChoiceQuestion | MatchingPairsQuestion | 
+              TrueFalseQuestion | FillInBlankQuestion | EssayQuestion)[];
   tags: string[];
   folderId?: string;
   version: number;

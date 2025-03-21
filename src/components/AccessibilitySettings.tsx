@@ -45,7 +45,10 @@ export default function AccessibilitySettings() {
     document.documentElement.setAttribute('data-reduce-motion', String(settings.reduceMotion));
   }, [settings]);
 
-  const handleSettingChange = (setting: keyof AccessibilitySettings, value: any) => {
+  const handleSettingChange = (
+    setting: keyof AccessibilitySettings, 
+    value: boolean | string
+  ) => {
     setSettings({
       ...settings,
       [setting]: value
@@ -168,7 +171,7 @@ export default function AccessibilitySettings() {
               <label className="select-label">Readability Level</label>
               <select 
                 value={settings.readabilityLevel}
-                onChange={(e) => handleSettingChange('readabilityLevel', e.target.value as any)}
+                onChange={(e) => handleSettingChange('readabilityLevel', e.target.value as 'simplified' | 'standard' | 'advanced')}
                 className="settings-select"
               >
                 <option value="simplified">Simplified</option>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { ContentAnalytics, HistoryItem } from '@/types';
+import { HistoryItem } from '@/types';
 
 interface AnalyticsDashboardProps {
   history: HistoryItem[];

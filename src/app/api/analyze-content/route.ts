@@ -50,21 +50,29 @@ export async function POST(req: Request) {
     });
 
     // Parse the AI response
-    const aiAnalysis = JSON.parse(completion.choices[0].message.content || '{}');
+    const parsedAnalytics = JSON.parse(completion.choices[0].message.content || '{}') as ContentAnalytics;
     
     // Combine basic metrics with AI analysis
     const analytics: ContentAnalytics = {
-      readabilityScore: aiAnalysis.readabilityScore || 50,
+      readabilityScore: parsedAnalytics.readabilityScore || 50,
       wordCount,
       estimatedReadingTimeMinutes,
-      topicRelevanceScore: aiAnalysis.topicRelevanceScore,
-      keyTerms: aiAnalysis.keyTerms?.map((term: any) => term.term) || [],
-      complexityLevel: aiAnalysis.complexityLevel || 'intermediate',
-      suggestedTags: aiAnalysis.suggestedTags || []
+      topicRelevanceScore: parsedAnalytics.topicRelevanceScore,
+      keyTerms: Array.isArray(parsedAnalytics.keyTerms) 
+        ? parsedAnalytics.keyTerms.map((term: unknown) => {
+            if (typeof term === 'string') return term;
+            if (typeof term === 'object' && term !== null && 'term' in term) {
+              return (term as { term: string }).term;
+            }
+            return String(term);
+          }) 
+        : [],
+      complexityLevel: parsedAnalytics.complexityLevel || 'intermediate',
+      suggestedTags: parsedAnalytics.suggestedTags || []
     };
 
     return NextResponse.json({ analytics });
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Error analyzing content:', error);
     return NextResponse.json(
       { error: 'Failed to analyze content' },

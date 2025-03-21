@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import Image from 'next/image';
 
 interface ContentEnrichmentProps {
   content: string;
@@ -167,7 +168,13 @@ export default function ContentEnrichment({ content, topic }: ContentEnrichmentP
                 {imageSuggestions.map(image => (
                   <div key={image.id} className="image-item" onClick={() => handleImageEmbed(image)}>
                     <div className="image-preview">
-                      <img src={image.url} alt={image.alt} />
+                      <Image 
+                        src={image.url} 
+                        alt={image.alt} 
+                        width={200} 
+                        height={150}
+                        style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                      />
                     </div>
                     <div className="image-info">
                       <p className="image-description">{image.alt}</p>
@@ -192,7 +199,13 @@ export default function ContentEnrichment({ content, topic }: ContentEnrichmentP
                 {videoSuggestions.map(video => (
                   <div key={video.id} className="video-item" onClick={() => handleVideoEmbed(video)}>
                     <div className="video-thumbnail">
-                      <img src={video.thumbnailUrl} alt={video.title} />
+                      <Image 
+                        src={video.thumbnailUrl} 
+                        alt={video.title}
+                        width={160} 
+                        height={90}
+                        style={{ objectFit: 'cover', width: '100%', height: '100%' }}
+                      />
                       <span className="video-duration">{video.duration}</span>
                     </div>
                     <div className="video-info">

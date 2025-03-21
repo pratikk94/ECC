@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { ContentAnalytics as ContentAnalyticsType } from '@/types';
 
 interface ContentAnalyticsProps {
@@ -12,13 +12,7 @@ export default function ContentAnalytics({ content }: ContentAnalyticsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (content && content.trim().length > 100) {
-      analyzeContent();
-    }
-  }, [content]);
-
-  const analyzeContent = async () => {
+  const analyzeContent = useCallback(async () => {
     if (!content || content.trim().length < 100) {
       setError('Content is too short for meaningful analysis');
       return;
@@ -48,7 +42,13 @@ export default function ContentAnalytics({ content }: ContentAnalyticsProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [content]);
+
+  useEffect(() => {
+    if (content && content.trim().length > 100) {
+      analyzeContent();
+    }
+  }, [content, analyzeContent]);
   
   const getReadabilityLabel = (score: number) => {
     if (score >= 90) return 'Very Easy';
