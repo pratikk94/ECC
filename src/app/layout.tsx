@@ -9,8 +9,8 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Content Generator",
-  description: "Generate educational content and questions",
+  title: "Content Generator | DestinPQ",
+  description: "Generate educational content and questions with DestinPQ's AI-powered tools",
 };
 
 export default function RootLayout({
@@ -24,8 +24,9 @@ export default function RootLayout({
         <nav className="main-nav">
           <div className="nav-container">
             <div className="nav-logo">
-              <Link href="/">
-                Educational Content Generator
+              <Link href="/" className="logo-link">
+                <span className="logo-text">DestinPQ</span>
+                <span className="logo-tagline">AI-Powered Learning Solutions</span>
               </Link>
             </div>
             <div className="nav-links">
