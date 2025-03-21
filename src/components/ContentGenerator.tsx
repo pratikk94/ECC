@@ -359,12 +359,14 @@ export default function ContentGenerator() {
         {activeTab === 2 && (
           <div>
             <h2 className="section-title">Preview & Download</h2>
-            <div className="card">
+            <div className="card download-card">
+              <h3 className="download-title">Your content is ready!</h3>
+              <p className="download-description">Download your educational content and assessment questions as a PDF file for offline use, printing, or sharing.</p>
               <button 
                 className="button download-button"
                 onClick={downloadContent}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M12 16L12 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M9 13L12 16L15 13" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M3 16.5V18.75C3 19.9926 4.00736 21 5.25 21H18.75C19.9926 21 21 19.9926 21 18.75V16.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
