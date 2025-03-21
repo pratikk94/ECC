@@ -5,6 +5,8 @@ export interface ContentForm {
   accessibilityLevel?: 'standard' | 'enhanced';
   targetAudience?: string;
   contentComplexity?: 'beginner' | 'intermediate' | 'advanced';
+  language?: string;
+  readabilityLevel?: 'simplified' | 'standard' | 'advanced';
 }
 
 // Question Types

@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { ContentForm, QuestionSettings, QuestionType, DifficultyLevel, HistoryItem, MixedQuestionList } from '@/types';
+import ContentEnrichment from './ContentEnrichment';
+import AnalyticsDashboard from './AnalyticsDashboard';
 
 interface QuestionData {
   questions: Array<Record<string, unknown>>;
@@ -25,6 +27,8 @@ export default function ContentGenerator({
     initialContentForm || {
       topic: '',
       subtopic: '',
+      language: 'english',
+      readabilityLevel: 'standard'
     }
   );
   const [generatedContent, setGeneratedContent] = useState<string>('');
@@ -162,12 +166,37 @@ export default function ContentGenerator({
     setError(null);
     setIsLoading(true);
     try {
+      // Load accessibility settings
+      const savedSettings = localStorage.getItem('accessibility-settings');
+      let accessibilitySettings = null;
+      if (savedSettings) {
+        try {
+          accessibilitySettings = JSON.parse(savedSettings);
+        } catch (e) {
+          console.error('Error parsing accessibility settings:', e);
+        }
+      }
+
+      // Apply accessibility settings if available
+      const requestData = {
+        ...contentForm
+      };
+
+      if (accessibilitySettings) {
+        if (accessibilitySettings.language && accessibilitySettings.language !== 'english') {
+          requestData.language = accessibilitySettings.language;
+        }
+        if (accessibilitySettings.readabilityLevel) {
+          requestData.readabilityLevel = accessibilitySettings.readabilityLevel;
+        }
+      }
+
       const response = await fetch('/api/generate-content', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(contentForm),
+        body: JSON.stringify(requestData),
       });
 
       if (!response.ok) {
@@ -279,6 +308,11 @@ export default function ContentGenerator({
                     </div>
                   ))}
                 </div>
+                {q.explanation && (
+                  <div className="question-explanation">
+                    <p><strong>Explanation:</strong> {q.explanation as string}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -301,6 +335,11 @@ export default function ContentGenerator({
                     </div>
                   ))}
                 </div>
+                {q.explanation && (
+                  <div className="question-explanation">
+                    <p><strong>Explanation:</strong> {q.explanation as string}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -339,6 +378,105 @@ export default function ContentGenerator({
                     </p>
                   ))}
                 </div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'trueFalse':
+        return (
+          <div>
+            {questions.questions.map((q, i: number) => (
+              <div key={i} className="question-item">
+                <h3 className="question-title">
+                  {i + 1}. True or False:
+                </h3>
+                <p className="statement">{q.statement as string}</p>
+                <div className="true-false-options">
+                  <div className={`option-item ${q.isTrue ? 'correct' : ''}`}>
+                    True {q.isTrue && '✓'}
+                  </div>
+                  <div className={`option-item ${!q.isTrue ? 'correct' : ''}`}>
+                    False {!q.isTrue && '✓'}
+                  </div>
+                </div>
+                {q.explanation && (
+                  <div className="question-explanation">
+                    <p><strong>Explanation:</strong> {q.explanation as string}</p>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        );
+      case 'fillInBlank':
+        return (
+          <div>
+            {questions.questions.map((q, i: number) => (
+              <div key={i} className="question-item">
+                <h3 className="question-title">
+                  {i + 1}. Fill in the Blank:
+                </h3>
+                <p className="fill-blank-text">{(q.textWithBlanks as string).replace(/___/g, '<span class="blank">_____</span>')}</p>
+                <div className="blanks-answers">
+                  <h4>Answers:</h4>
+                  <ul className="blank-answer-list">
+                    {(q.answers as string[][]).map((answerGroup, j: number) => (
+                      <li key={j}>
+                        Blank {j + 1}: {answerGroup.join(' or ')}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+      case 'essay':
+        return (
+          <div>
+            {questions.questions.map((q, i: number) => (
+              <div key={i} className="question-item essay-question">
+                <h3 className="question-title">
+                  {i + 1}. Essay Question:
+                </h3>
+                <p className="essay-prompt">{q.prompt as string}</p>
+                {q.wordLimit && (
+                  <p className="word-limit">Word Limit: {q.wordLimit}</p>
+                )}
+                {q.rubric && (
+                  <div className="rubric-section">
+                    <h4>Grading Rubric:</h4>
+                    <div className="rubric">
+                      {(q.rubric as any[]).map((item, j: number) => (
+                        <div key={j} className="rubric-item">
+                          <div className="rubric-criteria">
+                            <strong>{item.criteria}</strong> ({item.weight}%)
+                          </div>
+                          <div className="rubric-descriptions">
+                            <div className="rubric-level">
+                              <span className="level-name">Excellent:</span> {item.descriptions.excellent}
+                            </div>
+                            <div className="rubric-level">
+                              <span className="level-name">Good:</span> {item.descriptions.good}
+                            </div>
+                            <div className="rubric-level">
+                              <span className="level-name">Satisfactory:</span> {item.descriptions.satisfactory}
+                            </div>
+                            <div className="rubric-level">
+                              <span className="level-name">Needs Improvement:</span> {item.descriptions.needsImprovement}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {q.sampleAnswer && (
+                  <div className="sample-answer">
+                    <h4>Sample Answer:</h4>
+                    <p>{q.sampleAnswer as string}</p>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -429,6 +567,12 @@ export default function ContentGenerator({
         >
           Preview & Download
         </button>
+        <button 
+          className={`tab ${activeTab === 3 ? 'active' : ''}`}
+          onClick={() => setActiveTab(3)}
+        >
+          Analytics
+        </button>
       </div>
 
       {error && (
@@ -515,6 +659,12 @@ export default function ContentGenerator({
                 
                 <div className="word-count">
                   Word count: {wordCount} words
+                </div>
+                
+                <div className="content-enrichment-container">
+                  <h3 className="section-heading">Content Enrichment</h3>
+                  <p className="enrichment-description">Enhance your content with relevant images and videos</p>
+                  <ContentEnrichment content={generatedContent} topic={contentForm.topic} />
                 </div>
               </div>
             )}
@@ -626,6 +776,14 @@ export default function ContentGenerator({
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Analytics Tab */}
+        {activeTab === 3 && (
+          <div>
+            <h2 className="section-title">Content & Question Analytics</h2>
+            <AnalyticsDashboard history={history} />
           </div>
         )}
       </div>

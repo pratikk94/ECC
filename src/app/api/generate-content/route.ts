@@ -7,7 +7,7 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
-    const { topic, subtopic } = await req.json();
+    const { topic, subtopic, language = 'english', readabilityLevel = 'standard' } = await req.json();
     
     if (!topic || !subtopic) {
       return NextResponse.json(
@@ -16,12 +16,39 @@ export async function POST(req: Request) {
       );
     }
     
+    // Determine readability level instruction
+    let readabilityInstructions = '';
+    switch (readabilityLevel) {
+      case 'simplified':
+        readabilityInstructions = 'Use simple language with short sentences and basic vocabulary. Avoid jargon and complex concepts. Target a reading level suitable for elementary school students or English language learners.';
+        break;
+      case 'standard':
+        readabilityInstructions = 'Use clear, straightforward language that balances accessibility with academic rigor. Explain any specialized terms. Target a reading level suitable for high school or first-year college students.';
+        break;
+      case 'advanced':
+        readabilityInstructions = 'Use sophisticated language with specialized terminology appropriate for the field. Assume the reader has background knowledge in the subject. Target a reading level suitable for upper-level undergraduate or graduate students.';
+        break;
+      default:
+        readabilityInstructions = 'Use clear, straightforward language that balances accessibility with academic rigor. Explain any specialized terms. Target a reading level suitable for high school or first-year college students.';
+    }
+    
+    // Determine language instruction
+    let languageInstruction = '';
+    if (language && language !== 'english') {
+      languageInstruction = `Write the content in ${language}. Ensure all text, including headings, is in ${language}.`;
+    }
+    
     const completion = await openai.chat.completions.create({
       model: "gpt-3.5-turbo",
       messages: [
         {
           role: "system",
-          content: `You are an expert educational content creator with deep knowledge across various subjects. Your task is to create comprehensive, accurate, and engaging educational content. Focus on clarity, proper structure, and educational value while making complex concepts accessible to students.`
+          content: `You are an expert educational content creator with deep knowledge across various subjects. Your task is to create comprehensive, accurate, and engaging educational content. 
+Focus on clarity, proper structure, and educational value while making complex concepts accessible to students.
+
+${readabilityInstructions}
+
+${languageInstruction}`
         },
         {
           role: "user",
