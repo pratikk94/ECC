@@ -32,6 +32,7 @@ export default function ContentGenerator({
     questionType: 'singleChoice',
     difficulty: 'medium',
     numQuestions: 5,
+    includeExplanations: true
   });
   const [questions, setQuestions] = useState<QuestionData | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -535,6 +536,9 @@ export default function ContentGenerator({
                   <option value="singleChoice">Single Choice</option>
                   <option value="multipleChoice">Multiple Choice</option>
                   <option value="matchingPairs">Matching Pairs</option>
+                  <option value="trueFalse">True/False</option>
+                  <option value="fillInBlank">Fill in the Blank</option>
+                  <option value="essay">Essay Question</option>
                 </select>
               </div>
               <div className="form-group">
